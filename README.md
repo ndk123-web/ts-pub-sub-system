@@ -25,3 +25,7 @@ MY IDEA IS:
 6. testing
     - Look over `src/tests/` inside that there is 
     `publisher.ts` and `subscriber.ts`
+
+7. Subscriber Handler
+    - devloper need to assign `handler function` when creating object of `Subscriber`
+    - using that `handler function` all data you can get that and can do various operations on that data, like storing data into database, or send to other service .. whatever it is. 
