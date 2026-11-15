@@ -15,6 +15,9 @@ type DefaultSubscribeModel = StoredDefaultModel & {
 type MessageHandler = (data: StoredDefaultModel & {topic: string}) => Promise<void>;
 
 class DefaultSubscribe {
+    private running: boolean = false;
+    private milisecondsDelay: number = 2000;
+
     constructor(private handler: MessageHandler) {}
 
     async defaultSubscriber(user: User): Promise<AcknowledgmentModel> {
@@ -41,7 +44,7 @@ class DefaultSubscribe {
                     
                     for (const subscribeTopic of userDetails.subscribed) {
 
-                        for (const dataOfTopic of data[subscribeTopic]!) {
+                        for (const dataOfTopic of data[subscribeTopic]! ?? []) {
 
                             if (dataOfTopic.acknowledge) {
                                 continue;
@@ -77,6 +80,31 @@ class DefaultSubscribe {
             return {success: false};
         }
         
+    }
+
+    async delay(ms: number) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, ms);
+        })
+    }
+
+    async start(user: User) {
+        this.running = true;
+
+        while (this.running) {
+            console.log("CHECKING SUBSCRIBE TOPICS..");
+            
+            await this.delay(this.milisecondsDelay);
+
+            let {success} = await this.defaultSubscriber(user);
+            if (!success) {
+                console.log("ERROR WHILE CHECKING SUBSCRIBED TOPICS..");
+            }
+        }
+    }
+
+    stop() {
+        this.running = false;
     }
 }
 

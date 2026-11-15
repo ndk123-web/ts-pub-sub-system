@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "dev": "tsx watch src/main.ts"
+    "dev": "tsx watch src/main.ts",
+    "start:publisher": "tsx src/tests/publisher.ts",
+    "start:subscriber": "tsx src/tests/subscriber.ts"
   },
   "keywords": [],
   "author": "",
