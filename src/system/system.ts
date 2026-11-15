@@ -30,7 +30,12 @@ class System {
         let userDetailModel: UserModel | undefined = await getUserDetail(this.config.userKeyEmail);
         
         if (userDetailModel !== undefined) {
-            this.user = new User(userDetailModel);
+            if (this.user !== undefined) {
+                this.user.updateDetails(userDetailModel);
+            }
+            else {
+                this.user = new User(userDetailModel);
+            }
             console.log("User Created In Memory");
         }
     }

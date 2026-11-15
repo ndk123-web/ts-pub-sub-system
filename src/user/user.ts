@@ -118,6 +118,10 @@ class User {
         }
     }
 
+    updateDetails(user: UserModel) {
+        this.user = user;
+    }
+
     getUserDetails() {
         return this.user;
     }

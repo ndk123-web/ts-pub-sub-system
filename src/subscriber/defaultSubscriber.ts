@@ -42,6 +42,11 @@ class DefaultSubscribe {
                     for (const subscribeTopic of userDetails.subscribed) {
 
                         for (const dataOfTopic of data[subscribeTopic]!) {
+
+                            if (dataOfTopic.acknowledge) {
+                                continue;
+                            }
+                            
                             // send data somewhere 
                             let mergedTopic = {
                                 ...dataOfTopic,

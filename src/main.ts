@@ -18,29 +18,22 @@ const system = new System(config);
 await system.loadSystem();
 await system.createUser(user);
 
-const systemUserObject: SystemUserModel = await system.getUser();
+let {user: currUser, rehydrateCallback} = await system.getUser();
 
-if (systemUserObject.user !== undefined) {
-    await systemUserObject.user.registerTopic({topic: "auth"});
-    await systemUserObject.user.registerTopic({topic: "payments"});
+await currUser?.registerTopic({topic: "payment"});
 
-    await systemUserObject.user.subscribeTopic({topic: "auth"});
+await currUser?.publishTopic({topic: "payment"}, {d1: "d1"});
+await currUser?.publishTopic({topic: "payment"}, {d2: "d2"});
 
-    // rehydrate
-    await systemUserObject.rehydrateCallback();
-    
-    // publish into payment
-    await systemUserObject.user.publishTopic({topic: "auth"}, {from: 1, to: 2, tid: 11, amount: 100});
+await currUser?.subscribeTopic({topic: "payment"});
+
+const handler = async (data: any) => {
+    console.log("data received: ", data);
 }
 
-// subscriber
-const handler = async (message: StoredDefaultModel & {topic: string}) => {
-    console.log("Receiver: ", message);
-}
+await rehydrateCallback();
 
- const latestSystemUser = await system.recentUser();
 const subscriber = new DefaultSubscribe(handler);
-
-if (latestSystemUser !== undefined) {
-    await subscriber.defaultSubscriber(latestSystemUser);
+if (currUser !== undefined) {
+    subscriber.defaultSubscriber(currUser);
 }
