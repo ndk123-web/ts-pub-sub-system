@@ -21,4 +21,7 @@ MY IDEA IS:
     - it uses continuous loop which is control by
     `this.running` property inside DefaultSubscribe.
     - it uses `relaxation of 2 second`s , and after each 2 periodic 2 seconds it will check data from user worksapce , subscribed topics.
-    
+
+6. testing
+    - Look over `src/tests/` inside that there is 
+    `publisher.ts` and `subscriber.ts`
