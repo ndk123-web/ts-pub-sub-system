@@ -288,17 +288,7 @@ npm run start:publisher
 ### `src/tests/subscriber.ts`
 
 ```ts
-import System from "../system/system.js";
-import type { UserModel } from "../user/user.js";
-import DefaultSubscribe from "../subscriber/defaultSubscriber.js";
-
-const user: UserModel = {
-    name: "Ndk",
-    email: "ndk@gmail.con",
-    id: 1,
-    topics: [],
-    subscribed: []
-}
+import { System, DefaultSubscribe } from "json-pub-sub";
 
 const handler = async (data: any) => {
     console.log("Received data: ", data);
@@ -316,7 +306,7 @@ if (currUser !== undefined) {
         subscriber.stop();
         console.log("SUSCRIBER STOPPED, BYE BY NDKPUBSUB");
     })
-
+    
     await subscriber.start(currUser);
 }
 ```
@@ -326,10 +316,8 @@ if (currUser !== undefined) {
 ```ts
 import System from "../system/system.js";
 import type { UserModel } from "../user/user.js";
-import type { ConfigModel } from "../config/configTypes.js";
 import { setTimeout } from "node:timers/promises";
 
-let config: ConfigModel = {userKeyEmail: ""};
 const user: UserModel = {
     name: "Ndk",
     email: "ndk@gmail.con",

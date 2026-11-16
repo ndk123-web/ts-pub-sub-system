@@ -1,6 +1,6 @@
 {
   "name": "json-pub-sub",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A user-isolated, file-based publish/subscribe system for Node.js.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,12 +17,24 @@
     "start:publisher": "tsx src/tests/publisher.ts",
     "start:subscriber": "tsx src/tests/subscriber.ts"
   },
-  "keywords": ["pub sub system", "json-pub-sub", "persisting", "lock based"],
+  "keywords": [
+    "pub sub system",
+    "json-pub-sub",
+    "persisting",
+    "lock based"
+  ],
   "author": "Navnath Kadam",
   "license": "MIT",
-  "files":["dist", "README.md", "tsconfig.json", "package.json", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "tsconfig.json",
+    "package.json",
+    "LICENSE"
+  ],
   "type": "module",
   "dependencies": {
+    "json-pub-sub": "^1.0.1",
     "nanoid": "^6.0.2"
   },
   "devDependencies": {

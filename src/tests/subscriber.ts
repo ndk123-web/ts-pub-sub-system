@@ -1,14 +1,4 @@
-import System from "../system/system.js";
-import type { UserModel } from "../user/user.js";
-import DefaultSubscribe from "../subscriber/defaultSubscriber.js";
-
-const user: UserModel = {
-    name: "Ndk",
-    email: "ndk@gmail.con",
-    id: 1,
-    topics: [],
-    subscribed: []
-}
+import { System, DefaultSubscribe } from "json-pub-sub";
 
 const handler = async (data: any) => {
     console.log("Received data: ", data);

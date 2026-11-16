@@ -1,5 +1,4 @@
-import System from "../system/system.js";
-import type { UserModel } from "../user/user.js";
+import { System, type UserModel } from "json-pub-sub";
 import { setTimeout } from "node:timers/promises";
 
 const user: UserModel = {
