@@ -7,6 +7,7 @@ import { writeFile } from "node:fs/promises";
 import type { AcknowledgmentModel } from "../publisher/publisher.js";
 import type User from "../user/user.js";
 import acquireLock from "../utils/acquireLock.js";
+import Topics from "../topic/topic.js";
 
 type DefaultSubscribeModel = StoredDefaultModel & {
     topic: string;

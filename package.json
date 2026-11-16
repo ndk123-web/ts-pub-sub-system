@@ -1,8 +1,15 @@
 {
-  "name": "pub-sub",
+  "name": "json-pub-sub",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A user-isolated, file-based publish/subscribe system for Node.js.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
@@ -10,17 +17,17 @@
     "start:publisher": "tsx src/tests/publisher.ts",
     "start:subscriber": "tsx src/tests/subscriber.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["pub sub system", "json-pub-sub", "persisting", "lock based"],
+  "author": "Navnath Kadam",
+  "license": "MIT",
+  "files":["dist", "README.md", "tsconfig.json", "package.json", "LICENSE"],
   "type": "module",
   "dependencies": {
-    "@types/nanoid": "^2.1.0",
-    "nanoid": "^6.0.2",
-    "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "nanoid": "^6.0.2"
   },
   "devDependencies": {
-    "@types/node": "^26.6.6"
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   }
 }

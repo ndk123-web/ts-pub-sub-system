@@ -15,7 +15,18 @@ type SystemUserModel = {
 class System {
     private user?: User | undefined;
 
-    constructor(private config: ConfigModel) {}
+    constructor(private config: ConfigModel = {userKeyEmail: ""}) {}
+
+    private normalizeUser(user: UserModel): UserModel | undefined {
+        const email = user.email.trim();
+        const name = user.name.trim();
+
+        if (name.length === 0 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return undefined;
+        }
+
+        return {...user, name, email};
+    }
 
     async loadSystem() {
         console.log("Welcome To PUB SUB System");
@@ -60,8 +71,10 @@ class System {
             return {success: true}
         }
         catch(error) {
-            if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+            if ((error as NodeJS.ErrnoException).code === "ENOENT") {
                 console.log("File Doesn't Exist.");
+            } else {
+                console.log("Couldn't Read Config:", error);
             } 
             return {success: false};
         }
@@ -132,18 +145,21 @@ class System {
     }
 
     async createUser(user: UserModel): Promise<boolean> {
+        const normalizedUser = this.normalizeUser(user);
+        if (normalizedUser === undefined) {
+            console.error("Invalid user. Provide a name and a valid email address.");
+            return false;
+        }
 
-        // can add more validation afterward or deduplication
-        if (user.email.trim() === undefined || user.email.trim() == null || user.email.trim() == "") 
+        if (this.user !== undefined) {
+            console.error("A user already exists. Use changeUser() to change the active user.");
             return false;
-        
-        if (user.name.trim() === undefined || user.name.trim() == null || user.name.trim() == "") 
-            return false;
+        }
 
         console.log("Creating User For NdkPubSub..");
         
         // add details inside data/users.json
-        let success: boolean = await this.createFileAndAddData(user);
+        let success: boolean = await this.createFileAndAddData(normalizedUser);
         
         if (!success) {
             console.log("User Creation Failed.");
@@ -152,7 +168,7 @@ class System {
         else {
             console.log("User Created.");
 
-            let {success} = await this.updateConfig({userKeyEmail: user.email});
+            let {success} = await this.updateConfig({userKeyEmail: normalizedUser.email});
             if (!success)
                 console.log("Config Updation Failed.");
             else {
@@ -162,6 +178,55 @@ class System {
         }
 
         return true;
+    }
+
+    async changeUser(user: UserModel): Promise<boolean> {
+        const normalizedUser = this.normalizeUser(user);
+        if (normalizedUser === undefined) {
+            console.error("Invalid user. Provide a name and a valid email address.");
+            return false;
+        }
+
+        const activeUser = this.user;
+        if (activeUser === undefined) {
+            return this.createUser(normalizedUser);
+        }
+        const currentUser = activeUser.getUserDetails();
+
+        try {
+            const directory = join(homedir(), ".ndkpubsub");
+            const filepath = join(directory, "users.json");
+            let data: Record<string, UserModel> = {};
+
+            try {
+                const content = await readFile(filepath, "utf8");
+                if (content.trim().length !== 0) {
+                    data = JSON.parse(content) as Record<string, UserModel>;
+                }
+            } catch (error) {
+                if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+                    throw error;
+                }
+            }
+
+            delete data[currentUser.email];
+            data[normalizedUser.email] = normalizedUser;
+
+            await writeFile(filepath, JSON.stringify(data, null, 2), "utf8");
+
+            const configResult = await this.updateConfig({
+                userKeyEmail: normalizedUser.email
+            });
+            if (!configResult.success) {
+                return false;
+            }
+            
+            activeUser.updateDetails(normalizedUser);
+            return true;
+        } catch (error) {
+            console.error("Failed to change user:", error);
+            return false;
+        }
     }
 
     async rehydrate() {

@@ -1,9 +1,7 @@
 import System from "../system/system.js";
 import type { UserModel } from "../user/user.js";
-import type { ConfigModel } from "../config/configTypes.js";
 import DefaultSubscribe from "../subscriber/defaultSubscriber.js";
 
-let config: ConfigModel = {userKeyEmail: ""};
 const user: UserModel = {
     name: "Ndk",
     email: "ndk@gmail.con",
@@ -17,7 +15,7 @@ const handler = async (data: any) => {
 }
 
 const subscriber = new DefaultSubscribe(handler);
-const system = new System(config);
+const system = new System();
 await system.loadSystem();
 
 let {user: currUser, rehydrateCallback} = await system.getUser();

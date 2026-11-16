@@ -21,7 +21,7 @@ async function acquireLock(lockFilePath: string) {
         const handle = await open(lockFilePath, "wx");
 
         await handle.writeFile(JSON.stringify(lock, null, 2), "utf8");
-        console.log("LOCK OPENED:", lockFilePath, "PID:", process.pid);
+        // console.log("LOCK OPENED:", lockFilePath, "PID:", process.pid);
 
         return async function releaseLock(): Promise<void> {
             try {
@@ -29,9 +29,9 @@ async function acquireLock(lockFilePath: string) {
                 const currentLock = JSON.parse(content) as LockModel;
 
                 if (currentLock.token === token) {
-                    console.log("LOCK CLOSING:", lockFilePath, "PID:", process.pid);
+                    // console.log("LOCK CLOSING:", lockFilePath, "PID:", process.pid);
                     await unlink(lockFilePath);
-                    console.log("LOCK CLOSED:", lockFilePath);
+                    // console.log("LOCK CLOSED:", lockFilePath);
                 }
             } finally {
                 await handle.close();

@@ -11,19 +11,19 @@ async function getUserDetail(userEmail: string): Promise<UserModel | undefined> 
     const directory = join(userHomeProfile, ".ndkpubsub");
     const filepath = join(directory, "users.json");
 
-    // assuming already .ndkpubsub is there
-
-    let content: string = await readFile(filepath, "utf8");
     let data: Record<string, UserModel> = {};
     
     try {
         const content: string = await readFile(filepath, "utf8");
-        data = JSON.parse(content) 
+        if (content.trim().length !== 0) {
+            data = JSON.parse(content) as Record<string, UserModel>;
+        }
     }
     catch(error) {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-            console.log("Couldn't Get the File.");
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+            return undefined;
         }
+        throw error;
     }
 
     if (Object.hasOwn(data, userEmail)) {
