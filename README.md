@@ -5,6 +5,87 @@ TypeScript and Node.js. This project is mainly for learning how publishing,
 subscription, persistence, polling, acknowledgement, and file locking work
 together.
 
+## Run the example
+
+The repository includes two separate processes under `src/tests/`. Start the
+subscriber in one terminal:
+
+```bash
+npm run start:subscriber
+```
+
+Then start the publisher in another terminal:
+
+```bash
+npm run start:publisher
+```
+
+### `src/tests/subscriber.ts`
+
+```ts
+import { System, DefaultSubscribe } from "json-pub-sub";
+  
+const system = new System();
+await system.loadSystem();
+
+const handler = async (data: any) => {
+    console.log("Received data: ", data);
+}
+
+const subscriber = new DefaultSubscribe(handler);
+
+// rehydrateCallback for hydrate or we can say in short to refresh configs
+let {user: currUser, rehydrateCallback} = await system.getUser();
+
+if (currUser !== undefined) {
+    process.on("SIGINT", () => {
+        console.log("STOPPING SUBSCRIBER RUNNING");
+        subscriber.stop();
+        console.log("SUSCRIBER STOPPED, BYE BY NDKPUBSUB");
+    })
+    
+    await subscriber.start(currUser);
+}
+```
+
+### `src/tests/publisher.ts`
+
+```ts
+import { System, type UserModel } from "json-pub-sub";
+import { setTimeout } from "node:timers/promises";
+
+const user: UserModel = {
+    name: "Ndk",
+    email: "ndk@gmail.con",
+    id: 1,
+    topics: [],
+    subscribed: []
+}
+
+const system = new System();
+await system.loadSystem();
+
+let {user: currUser, rehydrateCallback} = await system.getUser();
+
+if (currUser !== undefined) {
+
+    await currUser.publishTopic({topic: "payment"}, {"data": "brsfksnkfs"});
+    await currUser.publishTopic({topic: "payment"}, {"data": "adda"});
+
+    // wait 3 sec to verify
+    await setTimeout(6000);
+
+    await currUser.publishTopic({topic: "payment"}, {"data": "brsfksnkfs"});
+    await currUser.publishTopic({topic: "payment"}, {"data": "brsfksnkfs"});
+}
+```
+
+The subscriber polls every two seconds. It prints received messages through
+its handler and marks successfully handled messages as acknowledged. The
+publisher sends two messages, waits six seconds, and sends two more.
+
+Stop the subscriber with `Ctrl+C`.
+
 ## What it does
 
 Each user has an isolated workspace:
@@ -45,85 +126,6 @@ npm install json-pub-sub
 
 The package exposes `System`, `User`, `DefaultPublish`, `DefaultSubscribe`,
 and the related TypeScript types from its package entry point.
-
-## Usage
-
-Create a user only during the first setup. After that, `System` automatically
-loads the saved user from `config.json` and `users.json`; you do not need to
-create the user object on every run:
-
-```ts
-import { System, type UserModel } from "json-pub-sub";
-
-const system = new System();
-await system.loadSystem();
-
-let { user } = await system.getUser();
-
-if (user === undefined) {
-  const newUser: UserModel = {
-    id: 1,
-    name: "Ndk",
-    email: "ndk@example.com",
-    topics: [],
-    subscribed: []
-  };
-
-  await system.createUser(newUser);
-  ({ user } = await system.getUser());
-}
-
-if (user === undefined) {
-  throw new Error("Unable to load or create the user");
-}
-```
-
-Register, subscribe, and publish:
-
-```ts
-await user.registerTopic({ topic: "payment" });
-await user.subscribeTopic({ topic: "payment" });
-
-await user.publishTopic(
-  { topic: "payment" },
-  { from: 1, to: 2, amount: 100 }
-);
-```
-
-Start a subscriber with your own handler:
-
-```ts
-import { DefaultSubscribe } from "json-pub-sub";
-
-const subscriber = new DefaultSubscribe(async (message) => {
-  console.log("Received:", message);
-});
-
-process.on("SIGINT", () => {
-  subscriber.stop();
-});
-
-await subscriber.start(user);
-```
-
-`start()` continuously polls the user's local topic file. Run the publisher
-and subscriber in separate processes when testing them together.
-
-### Change the active user
-
-To change the saved user's name or email, use `changeUser()`. It updates the
-user record, removes the old email key when the email changes, updates
-`config.json`, and keeps the existing in-memory `User` reference current:
-
-```ts
-await system.changeUser({
-  id: 1,
-  name: "New Name",
-  email: "new@example.com",
-  topics: [],
-  subscribed: []
-});
-```
 
 ## Important edge cases
 
@@ -263,92 +265,6 @@ cd ts-pub-sub-system
 npm install
 npm run build
 ```
-
-To inspect the files that will be included in the npm package:
-
-```bash
-npm pack --dry-run
-```
-
-## Run the example
-
-The repository includes two separate processes under `src/tests/`. Start the
-subscriber in one terminal:
-
-```bash
-npm run start:subscriber
-```
-
-Then start the publisher in another terminal:
-
-```bash
-npm run start:publisher
-```
-
-### `src/tests/subscriber.ts`
-
-```ts
-import { System, DefaultSubscribe } from "json-pub-sub";
-
-const handler = async (data: any) => {
-    console.log("Received data: ", data);
-}
-
-const subscriber = new DefaultSubscribe(handler);
-const system = new System();
-await system.loadSystem();
-
-let {user: currUser, rehydrateCallback} = await system.getUser();
-
-if (currUser !== undefined) {
-    process.on("SIGINT", () => {
-        console.log("STOPPING SUBSCRIBER RUNNING");
-        subscriber.stop();
-        console.log("SUSCRIBER STOPPED, BYE BY NDKPUBSUB");
-    })
-    
-    await subscriber.start(currUser);
-}
-```
-
-### `src/tests/publisher.ts`
-
-```ts
-import System from "../system/system.js";
-import type { UserModel } from "../user/user.js";
-import { setTimeout } from "node:timers/promises";
-
-const user: UserModel = {
-    name: "Ndk",
-    email: "ndk@gmail.con",
-    id: 1,
-    topics: [],
-    subscribed: []
-}
-
-const system = new System();
-await system.loadSystem();
-
-let {user: currUser, rehydrateCallback} = await system.getUser();
-
-if (currUser !== undefined) {
-
-    await currUser.publishTopic({topic: "payment"}, {"data": "brsfksnkfs"});
-    await currUser.publishTopic({topic: "payment"}, {"data": "adda"});
-
-    // wait 3 sec to verify
-    await setTimeout(6000);
-
-    await currUser.publishTopic({topic: "payment"}, {"data": "brsfksnkfs"});
-    await currUser.publishTopic({topic: "payment"}, {"data": "brsfksnkfs"});
-}
-```
-
-The subscriber polls every two seconds. It prints received messages through
-its handler and marks successfully handled messages as acknowledged. The
-publisher sends two messages, waits six seconds, and sends two more.
-
-Stop the subscriber with `Ctrl+C`.
 
 ## Available scripts
 
