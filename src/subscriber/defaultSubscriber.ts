@@ -6,7 +6,7 @@ import type { StoredDefaultModel } from "../publisher/defaultPublish.js";
 import { writeFile } from "node:fs/promises";
 import type { AcknowledgmentModel } from "../publisher/publisher.js";
 import type User from "../user/user.js";
-import getUserDetail from "../utils/getUserDetails.js";
+import acquireLock from "../utils/acquireLock.js";
 
 type DefaultSubscribeModel = StoredDefaultModel & {
     topic: string;
@@ -21,60 +21,57 @@ class DefaultSubscribe {
     constructor(private handler: MessageHandler) {}
 
     async defaultSubscriber(user: User): Promise<AcknowledgmentModel> {
-
+        const userHomeDir: string = homedir();
+        const directory: string = join(userHomeDir, ".ndkpubsub", "topics", user.user.email);
+        const filepath: string = join(directory, "data.json");
+        
         try {
-            const userHomeDir: string = homedir();
-            const directory: string = join(userHomeDir, ".ndkpubsub", "topics", user.user.email);
-            const filepath: string = join(directory, "data.json");
 
             // const filepathForUserJson: string = join(userHomeDir, ".ndkpubsub", "users.json");
     
             // assuming if it subscribed then its already created data.json and have some data into it
             // but i back off and for safety added it
             await mkdir(directory, {recursive: true});
-            let data: Record<string, StoredDefaultModel[]>
+            const releaseLock = await acquireLock(join(directory, "config.lock"));
+
+            if (releaseLock === undefined) {
+                return {success: false};
+            }
 
             try {
-                let content: string = await readFile(filepath, "utf8");
+                let data: Record<string, StoredDefaultModel[]> = {};
+                const content: string = await readFile(filepath, "utf8");
 
                 if (content.trim().length !== 0) {
-                    data = JSON.parse(content)
+                    data = JSON.parse(content);
 
                     const userDetails = user.getUserDetails();
-                    
+
                     for (const subscribeTopic of userDetails.subscribed) {
-
-                        for (const dataOfTopic of data[subscribeTopic]! ?? []) {
-
+                        for (const dataOfTopic of data[subscribeTopic] ?? []) {
                             if (dataOfTopic.acknowledge) {
                                 continue;
                             }
-                            
-                            // send data somewhere 
-                            let mergedTopic = {
+
+                            const mergedTopic = {
                                 ...dataOfTopic,
                                 topic: subscribeTopic
                             };
 
-                            // callback
                             await this.handler(mergedTopic);
-
                             dataOfTopic.acknowledge = true;
                         }
                     }
 
-                    let jsonDataString: string = JSON.stringify(data, null, 2);
+                    const jsonDataString = JSON.stringify(data, null, 2);
                     await writeFile(filepath, jsonDataString, "utf8");
                 }
-            }
-            catch(error) {
-                console.log("Error: ", error);
-                return {success: false};
-            }
 
-            return {success: true};
+                return {success: true};
+            } finally {
+                await releaseLock();
+            }
         }
-        
         catch(error) {
             console.log("Error: ", error);
             return {success: false};

@@ -5,6 +5,7 @@ import type { AcknowledgmentModel } from "./publisher.js";
 import { join } from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { nanoid } from "nanoid";
+import acquireLock from "../utils/acquireLock.js";
 
 type StoredDefaultModel = {
     id: string;
@@ -23,39 +24,44 @@ class DefaultPublish {
             const filepath: string = join(directory, "data.json");
     
             await mkdir(directory, {recursive: true});
+            const releaseLock = await acquireLock(join(directory, "config.lock"));
 
-            let beforeData: Record<string, StoredDefaultModel[]> = {}; 
-    
+            if (releaseLock === undefined) {
+                return {success: false};
+            }
+
             try {
-                let content: string = await readFile(filepath, "utf8");
-                if (content.trim().length == 0) {
-                    console.log("Empty Topics");
-                }else {
-                    beforeData = JSON.parse(content);
+                let beforeData: Record<string, StoredDefaultModel[]> = {};
+                try {
+                    const content = await readFile(filepath, "utf8");
+                    if (content.trim().length !== 0) {
+                        beforeData = JSON.parse(content);
+                    }
+                } catch (error) {
+                    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+                        throw error;
+                    }
                 }
-            }
-            catch(error) {
-                if ((error as NodeJS.ErrnoException).code == "ENOENT") {
-                    console.log("File Doesn't Exist.");
-                } 
-                else {
-                    console.log("Error: ", error);
-                    return {success: false};
+
+                const uniqueId: string = nanoid();
+
+                if (beforeData[topic.topic] === undefined) {
+                    beforeData[topic.topic] = [];
                 }
+
+                beforeData[topic.topic]!.push({
+                    id: uniqueId,
+                    data,
+                    acknowledge: false
+                });
+
+                const jsonString = JSON.stringify(beforeData, null, 2);
+                await writeFile(filepath, jsonString, "utf8");
+
+                return {success: true};
+            } finally {
+                await releaseLock();
             }
-
-            const uniqueId: string = nanoid();
-
-            if (beforeData[topic.topic] === undefined) {
-                beforeData[topic.topic] = [];
-            }
-
-            beforeData[topic.topic]?.push({id: uniqueId,data: data,acknowledge: false})
-    
-            let jsonString: string = JSON.stringify(beforeData, null, 2);
-            await writeFile(filepath, jsonString, "utf8");
-    
-            return {success: true};
         }
 
         catch(error) {
