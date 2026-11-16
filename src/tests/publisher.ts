@@ -16,6 +16,8 @@ let {user: currUser, rehydrateCallback} = await system.getUser();
 
 if (currUser !== undefined) {
 
+    await currUser.registerTopic({topic: "payment"});
+
     await currUser.publishTopic({topic: "payment"}, {"data": "brsfksnkfs"});
     await currUser.publishTopic({topic: "payment"}, {"data": "adda"});
 
